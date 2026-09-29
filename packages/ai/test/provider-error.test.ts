@@ -294,6 +294,10 @@ describe("provider error classification", () => {
       zai("1310", "Weekly/Monthly Limit Exhausted. Your limit will reset at 2026-10-01 00:00:00"),
       zai("1311", "Your current subscription plan does not yet include access to glm-5"),
       zai("1314", "Your enterprise package has expired. Please contact your enterprise administrator."),
+      zai(
+        "1313",
+        "Your account's current usage pattern does not comply with the Fair Usage Policy, and your request frequency has been limited. For details, please refer to the Subscription Service Agreement. To restore access, please submit a request.",
+      ),
       // Z.ai's Anthropic-compatible endpoint wraps the code and request ID into the message.
       {
         type: "error",
@@ -311,6 +315,39 @@ describe("provider error classification", () => {
           classifyProviderFailure({ message: body.error.message, status: 429, rawBody: JSON.stringify(body) })._tag,
       ),
     ).toEqual(Array(cases.length).fill("QuotaExceeded"))
+  })
+
+  test("classifies Z.ai prompt length rejections as context overflow", () => {
+    const cases = [
+      { error: { code: "1261", message: "Prompt 超长" } },
+      { error: { code: "1261", message: "Prompt too long" } },
+      {
+        type: "error",
+        error: { type: "invalid_request_error", code: "1261", message: "[1261][Prompt too long][2026092913]" },
+      },
+    ]
+    expect(
+      cases.map((body) => {
+        const reason = classifyProviderFailure({
+          message: body.error.message,
+          status: 400,
+          rawBody: JSON.stringify(body),
+        })
+        return reason._tag === "InvalidRequest" ? reason.classification : reason._tag
+      }),
+    ).toEqual(["context-overflow", "context-overflow", "context-overflow"])
+  })
+
+  test("classifies Z.ai sensitive content rejections as content policy", () => {
+    const message =
+      "System detected potentially unsafe or sensitive content in input or generation. Please avoid using prompts that may generate sensitive content. Thank you for your cooperation."
+    expect(
+      classifyProviderFailure({
+        message,
+        status: 400,
+        rawBody: JSON.stringify({ error: { code: "1301", message } }),
+      })._tag,
+    ).toBe("ContentPolicy")
   })
 
   test("keeps Z.ai throttling and overload retryable", () => {
