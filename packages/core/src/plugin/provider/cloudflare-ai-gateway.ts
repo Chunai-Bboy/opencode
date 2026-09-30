@@ -18,8 +18,9 @@ const accountIdField = Form.StringField.make({
 const gatewayIdField = Form.StringField.make({
   type: "string",
   key: "gatewayId",
-  title: "Enter your Cloudflare AI Gateway ID (optional)",
-  placeholder: "default",
+  title: "Enter your Cloudflare AI Gateway ID",
+  placeholder: "e.g. my-gateway",
+  required: true,
 })
 
 export const CloudflareAIGatewayPlugin = define({

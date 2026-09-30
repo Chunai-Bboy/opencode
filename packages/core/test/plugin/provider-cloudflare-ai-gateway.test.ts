@@ -35,7 +35,7 @@ describe("CloudflareAIGatewayPlugin", () => {
           label: "Gateway API token",
           form: [
             expect.objectContaining({ type: "string", key: "accountId", required: true }),
-            expect.objectContaining({ type: "string", key: "gatewayId" }),
+            expect.objectContaining({ type: "string", key: "gatewayId", required: true }),
           ],
         })
       }),
@@ -63,7 +63,7 @@ describe("CloudflareAIGatewayPlugin", () => {
         expect((yield* integrations.get(Integration.ID.make("cloudflare-ai-gateway")))?.methods).toContainEqual({
           type: "key",
           label: "Gateway API token",
-          form: [expect.objectContaining({ type: "string", key: "gatewayId" })],
+          form: [expect.objectContaining({ type: "string", key: "gatewayId", required: true })],
         })
       }),
     ),
